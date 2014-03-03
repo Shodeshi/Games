@@ -1,0 +1,171 @@
+<!doctype html> 
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>五子棋</title>
+<script type="text/javascript" src="js/phaser.min.js"></script>
+<style type="text/css">
+        body {
+            margin: 0;
+        }
+</style>
+</head>
+<body>
+<script type="text/javascript">
+
+var game = new Phaser.Game(1024, 768, Phaser.AUTO, '', { preload: preload, create: create, update: update});
+
+//棋盘大小
+var size = 19;
+//棋盘宽度
+var WIDTH = 640;
+var MARGIN = 20;
+var singeWidth = (WIDTH - MARGIN * 2)/size;
+var CANVAS_MARGIN_LEFT=0;
+var CANVAS_MARGIN_TOP=0;
+var winner = -1;
+//初始化棋子
+var chessArr;
+var chessGroup;
+var backBtn;
+var resetBtn;
+
+var console;
+var text;
+
+function preload() {
+	game.load.image('black', 'asset/black.png');
+	game.load.image('white', 'asset/white.png');
+	game.load.image('back', 'asset/back.png');
+	game.load.image('reset', 'asset/reset.png');
+}
+
+function create() {
+	
+	//背景
+	game.stage.backgroundColor = '#ff8c00';
+    //画棋盘
+	var graphics = game.add.graphics(0, 0);
+	graphics.beginFill(0x000000);
+	graphics.lineStyle(1, 0x000000, 1);
+	for(var x = 0; x <= size; x++){
+		graphics.moveTo(MARGIN, MARGIN + x * singeWidth);
+		graphics.lineTo(WIDTH - MARGIN, MARGIN + x * singeWidth);
+		
+		graphics.moveTo(MARGIN + x * singeWidth, MARGIN);
+		graphics.lineTo(MARGIN + x * singeWidth, WIDTH - MARGIN);
+	}
+	graphics.endFill();
+	
+	chessGroup = game.add.group();
+	backBtn = game.add.button(700, 200, 'back', back);
+	resetBtn = game.add.button(700, 400, 'reset', reset);
+	
+	
+	console = game.add.text(0, 700, '', { fontSize: '32px', fill: '#000' });
+//	text = game.add.text(700, 650, 'Test', { fontSize: '32px', fill: '#000' });
+}
+
+function update() {
+	//console.content = 'console: (' + game.input.x + ', ' + game.input.y + ')';
+	
+	if(game.input.mousePointer.isDown && winner == 0){
+		go(game.input.x, game.input.y);
+	}
+}
+
+//下棋
+function go(x, y){
+	if(x - CANVAS_MARGIN_LEFT - MARGIN < 0 || y - CANVAS_MARGIN_TOP - MARGIN < 0)
+		return;
+	var position = getPosition(x,y);
+	positionX = position[0];
+	positionY = position[1];
+	
+	if(positionX > size || positionY > size || chessArr[positionX][positionY] != 0){
+		//该位置已存在
+		return;
+	}
+	//console.content = 'go: (' + positionX + ', ' + positionY + ')';
+	
+	var chessColor = createChess(positionX, positionY);
+	
+	if(getMaxSum(positionX, positionY, chessColor) >= 4){
+		winner = chessColor;
+		console.content = winner == 1 ? '黑棋获胜!' : '白棋获胜!';
+	}
+}
+
+function getPosition(x, y){
+	return [Math.round((x - CANVAS_MARGIN_LEFT - MARGIN) / singeWidth), Math.round((y - CANVAS_MARGIN_TOP - MARGIN) / singeWidth)];
+}
+
+function createChess(positionX, positionY){
+	var centerX = MARGIN + positionX * singeWidth;
+	var centerY = MARGIN + positionY * singeWidth;
+	var color;
+	if(chessGroup.total == -1 || chessGroup.total % 2 == 0){
+		chessArr[positionX][positionY] = 1;
+		color = 'black';
+	}
+	else{
+		chessArr[positionX][positionY] = 2;
+		color = 'white';
+	}
+	
+	var chess = chessGroup.create(centerX, centerY, color);
+	chess.x -= chess.width/2;
+	chess.y -= chess.height/2;
+	chess.position = [positionX, positionY];
+	
+	return color == 'black' ? 1 : 2;
+	//console.content = 'go: ' + chess.position[0] + ',' + chess.position[1];
+}
+
+function back(){
+	if(winner != 0)
+		return;
+	
+	var chess = chessGroup.getAt(chessGroup.total - 1);
+	chess.destroy();
+	chessArr[chess.position[0]][chess.position[1]] = 0;
+}
+
+function reset(){
+	console.content = '';
+	
+	chessArr = new Array();
+	for(var i = 0; i <= size; i++){
+		chessArr[i] = new Array();
+		for(var j = 0; j <= size; j++){
+			chessArr[i][j] = 0;
+		}
+	}
+	
+	chessGroup.destroy();
+	chessGroup = game.add.group();
+	
+	winner = 0;
+}
+
+var directionArr = [[1,0,-1,0], [1,1,-1,-1], [0,1,0,-1], [-1,1,1,-1]];
+function getMaxSum(positionX, positionY, chessColor){
+	for(var index=0;index<directionArr.length;index++){
+		var sum = getMax(positionX, positionY, chessColor, directionArr[index][0], directionArr[index][1]) + getMax(positionX, positionY, chessColor, directionArr[index][2], directionArr[index][3]);
+		if(sum >= 4)
+			return sum;
+	}
+}
+
+
+function getMax(positionX, positionY, color, directionX, directionY){
+	if(positionX + directionX < 0 || positionX + directionX > size || positionY + directionY < 0 || positionY + directionY > size)
+		return 0;
+	if(chessArr[positionX + directionX][positionY + directionY] == color)
+		return 1 + getMax(positionX + directionX, positionY + directionY, color, directionX, directionY);
+	else
+		return 0;
+}
+</script>
+</body>
+</html>
