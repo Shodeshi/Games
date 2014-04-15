@@ -41,7 +41,8 @@
             'src/resource.js',
             'src/WelcomeLayer.js',
             'src/Constants.js',
-            'src/Game.js'//add your own files in order here
+            'src/Game.js',
+            'src/Chessboard.js'//add your own files in order here
         ]
     };
 
