@@ -21,9 +21,7 @@ var Chessboard = cc.Sprite.extend({
         return (deltaX <= contentSize.width/2 && deltaY <= contentSize.height/2);
     },
     onTouchBegan:function (touch, event) {
-        if (!this.containsTouchLocation(touch)) 
-            return false;
-        return true;
+        return this.containsTouchLocation(touch);
     },
     onTouchEnded:function (touch, event) {
         cc.log("Move end ahahah");

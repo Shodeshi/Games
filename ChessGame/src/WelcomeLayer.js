@@ -11,8 +11,8 @@ var WelcomeLayer = cc.Layer.extend({
             var layer = cc.LayerColor.create(new cc.Color4B(128,128,128,255), size.width, size.height);
             this.addChild(layer);
             var itemStartGame = cc.MenuItemImage.create(
-                "res/btn/btnStartGameNor.png",
-                "res/btn/btnStartGameDown.png",
+                s_StartBtnNor,
+                s_StartBtnDown,
                 this.menuCallBack,
                 this
             );
