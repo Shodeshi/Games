@@ -42,6 +42,7 @@
             'src/WelcomeLayer.js',
             'src/Constants.js',
             'src/Game.js',
+            'src/Utils.js',
             'lib/json2.js'//add your own files in order here
         ]
     };

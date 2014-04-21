@@ -19,7 +19,9 @@ var Game = cc.Layer.extend({
     playerCount: null,
     //当前玩家顺序, 1-黑棋, 2-白棋
     myOrder: null,
-    ctor: function() {
+    userName: null,
+    ctor: function(userName) {
+        this.userName = userName;
         this._super();
         this.init();
     },
@@ -58,11 +60,11 @@ var Game = cc.Layer.extend({
             webSocket = new WebSocket("ws://" + HOST + ":8080/GameServer-war/server");
             webSocket.game = this;
             webSocket.onopen = function(event) {
-//                var obj = JSON.parse(event.data);
-//                playerCount = obj.playerCount;
-//                myOrder = playerCount;
-//                controlLabel.setString("当前玩家: " + playerCount + "/2");
                 cc.log('WebSocket connected.');
+                var request = new Object();
+                request.action = "login";
+                request.userName = this.game.userName;
+                this.send(JSON.stringify(request));
             };
             webSocket.onerror = function() {
                 cc.error('WebSocket connect failed.');
@@ -93,18 +95,6 @@ var Game = cc.Layer.extend({
             bRet = true;
         }
         return bRet;
-    },
-    //判断触摸点是否在图片的区域上
-    containsTouchLocation: function(touch, obj) {
-        //获取触摸点位置
-        var getPoint = touch.getLocation();
-        //获取图片区域尺寸
-        var contentSize = obj.getContentSize();
-        //判断点击是否在区域上
-        var deltaX = Math.abs(getPoint.x - obj.getPosition().x);
-        var deltaY = Math.abs(getPoint.y - obj.getPosition().y);
-
-        return (deltaX <= contentSize.width / 2 && deltaY <= contentSize.height / 2);
     },
     //获取触摸点在棋盘上的位置
     getTouchBoardPosition: function(touch) {
@@ -216,10 +206,10 @@ var Game = cc.Layer.extend({
             return 0;
     },
     onTouchBegan: function(touch, event) {
-        return this.containsTouchLocation(touch, chessboard);
+        return Utils.containsTouchLocation(touch, chessboard);
     },
     onTouchEnded: function(touch, event) {
-        if (this.containsTouchLocation(touch, chessboard) && playerCount == 2) {
+        if (Utils.containsTouchLocation(touch, chessboard) && playerCount == 2) {
             if ((chessArr.length % 2 + 1) != myOrder) {
                 controlLabel.setString("没轮到你");
                 return;
