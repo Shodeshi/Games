@@ -22,7 +22,7 @@ var Game = cc.Layer.extend({
     userName: null,
     onlineUserText: null,
     blackPlayerText: null,
-    whilePlayerText: null,
+    whitePlayerText: null,
     ctor: function(userName) {
         this.userName = userName;
         this._super();
@@ -56,10 +56,10 @@ var Game = cc.Layer.extend({
             blackPlayerText.setPosition(size.width / 2 + chessboard.getContentSize().width / 2 + 10, size.height / 2 + 30);
             this.addChild(blackPlayerText);
 
-            whilePlayerText = cc.LabelTTF.create("白方:", "Microsoft Yahei", 30);
-            whilePlayerText.setAnchorPoint(0, 0);
-            whilePlayerText.setPosition(size.width / 2 + chessboard.getContentSize().width / 2 + 10, size.height / 2 - 30);
-            this.addChild(whilePlayerText);
+            whitePlayerText = cc.LabelTTF.create("白方:", "Microsoft Yahei", 30);
+            whitePlayerText.setAnchorPoint(0, 0);
+            whitePlayerText.setPosition(size.width / 2 + chessboard.getContentSize().width / 2 + 10, size.height / 2 - 30);
+            this.addChild(whitePlayerText);
 
             onlineUserText = cc.LabelTTF.create("在线玩家:", "Microsoft Yahei", 30);
             onlineUserText.setAnchorPoint(1, 1);
@@ -98,7 +98,7 @@ var Game = cc.Layer.extend({
                         if (index == 0)
                             blackPlayerText.setString("黑方: " + match.playingUsers[index]);
                         else if (index == 1)
-                            whilePlayerText.setString("白方: " + match.playingUsers[index]);
+                            whitePlayerText.setString("白方: " + match.playingUsers[index]);
                     }
                     var onlineUserStr = "在线玩家:\n";
                     for (index in match.onlineUsers) {
@@ -138,7 +138,8 @@ var Game = cc.Layer.extend({
                         myOrder = obj.playerOrder;
                         break;
                     case "playerExit":
-                        controlLabel.setString("游戏中玩家退出, 游戏结束");
+                        if (playerCount == 2)
+                            controlLabel.setString("游戏中玩家退出, 游戏结束");
                         this.game.clear();
                         break;
                 }
@@ -249,6 +250,7 @@ var Game = cc.Layer.extend({
         return boardArr[position.x][position.y];
     },
     clear: function() {
+        playerCount = 0;
         myOrder = -1;
         this.addChild(menu);
         blackPlayerText.setString("黑方: ");
