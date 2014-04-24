@@ -62,9 +62,9 @@ var Game = cc.Layer.extend({
             this.addChild(whilePlayerText);
 
             onlineUserText = cc.LabelTTF.create("在线玩家:", "Microsoft Yahei", 30);
-            onlineUserText.setAnchorPoint(1, 0.2);
+            onlineUserText.setAnchorPoint(1, 1);
             onlineUserText.setHorizontalAlignment(cc.TEXT_ALIGNMENT_RIGHT);
-            onlineUserText.setPosition(size.width / 2 - chessboard.getContentSize().width / 2 - 10, size.height / 2 - 30);
+            onlineUserText.setPosition(size.width / 2 - chessboard.getContentSize().width / 2 - 10, size.height / 2 + chessboard.getContentSize().width / 2);
             this.addChild(onlineUserText);
 
             var resetBtn = cc.MenuItemFont.create("开始游戏", this.resetRequest, this);
@@ -138,7 +138,7 @@ var Game = cc.Layer.extend({
                         myOrder = obj.playerOrder;
                         break;
                     case "playerExit":
-                        controlLabel.setString("游戏中玩家推出, 游戏结束");
+                        controlLabel.setString("游戏中玩家退出, 游戏结束");
                         this.game.clear();
                         break;
                 }
