@@ -20,6 +20,9 @@ var Game = cc.Layer.extend({
     //当前玩家顺序, 1-黑棋, 2-白棋
     myOrder: null,
     userName: null,
+    onlineUserText: null,
+    blackPlayerText: null,
+    whilePlayerText: null,
     ctor: function(userName) {
         this.userName = userName;
         this._super();
@@ -42,10 +45,27 @@ var Game = cc.Layer.extend({
 
             directionArr = new Array([1, 0, -1, 0], [1, 1, -1, -1], [0, 1, 0, -1], [-1, 1, 1, -1]);
 
-            controlLabel = cc.LabelTTF.create("当前玩家: 0/2", "Microsoft Yahei", 30);
+            //棋盘上方 控制显示
+            controlLabel = cc.LabelTTF.create("载入中...", "Microsoft Yahei", 30);
             controlLabel.setPosition(size.width / 2, size.height / 2 + chessboard.getContentSize().height / 2 + 30);
             //controlLabel.setColor(cc.c3b(255, 0, 0));
             this.addChild(controlLabel);
+
+            blackPlayerText = cc.LabelTTF.create("黑方:", "Microsoft Yahei", 30);
+            blackPlayerText.setAnchorPoint(0, 0);
+            blackPlayerText.setPosition(size.width / 2 + chessboard.getContentSize().width / 2 + 10, size.height / 2 + 30);
+            this.addChild(blackPlayerText);
+
+            whilePlayerText = cc.LabelTTF.create("白方:", "Microsoft Yahei", 30);
+            whilePlayerText.setAnchorPoint(0, 0);
+            whilePlayerText.setPosition(size.width / 2 + chessboard.getContentSize().width / 2 + 10, size.height / 2 - 30);
+            this.addChild(whilePlayerText);
+
+            onlineUserText = cc.LabelTTF.create("在线玩家:", "Microsoft Yahei", 30);
+            onlineUserText.setAnchorPoint(1, 0.2);
+            onlineUserText.setHorizontalAlignment(cc.TEXT_ALIGNMENT_RIGHT);
+            onlineUserText.setPosition(size.width / 2 - chessboard.getContentSize().width / 2 - 10, size.height / 2 - 30);
+            this.addChild(onlineUserText);
 
             var resetBtn = cc.MenuItemFont.create("开始游戏", this.resetRequest, this);
             resetBtn.setDisabledColor(cc.c3b(32, 32, 64));
@@ -53,7 +73,7 @@ var Game = cc.Layer.extend({
             resetBtn.setFontName("Microsoft Yahei");
             menu = cc.Menu.create(resetBtn);
             menu.setPosition(size.width / 2, size.height / 2 - chessboard.getContentSize().height / 2 - 30);
-            this.addChild(menu);
+
             //TODO
             myOrder = -1;
 
@@ -72,7 +92,38 @@ var Game = cc.Layer.extend({
             webSocket.onmessage = function(event) {
                 cc.log("Server message: " + event.data);
                 var obj = JSON.parse(event.data);
+                var match = obj.match;
+                if (match) {
+                    for (index in match.playingUsers) {
+                        if (index == 0)
+                            blackPlayerText.setString("黑方: " + match.playingUsers[index]);
+                        else if (index == 1)
+                            whilePlayerText.setString("白方: " + match.playingUsers[index]);
+                    }
+                    var onlineUserStr = "在线玩家:\n";
+                    for (index in match.onlineUsers) {
+                        onlineUserStr += (match.onlineUsers[index] + "\n");
+                    }
+                    onlineUserText.setString(onlineUserStr);
+                }
                 switch (obj.action) {
+                    case "init":
+                        playerCount = match.playingUsers.length;
+                        if (playerCount < 2) {
+                            controlLabel.setString("准备开始: " + playerCount + "/2");
+                            this.game.addChild(menu);
+                        }
+                        else {
+                            this.game.resetGame();
+                            var position = new Object();
+                            for (index in match.chessArr) {
+                                position.x = match.chessArr[index].positionX;
+                                position.y = match.chessArr[index].positionY;
+                                this.game.goResponse(position);
+                            }
+                            controlLabel.setString("人满了, 观战中");
+                        }
+                        break;
                     case "go":
                         var position = new Object();
                         position.x = obj.positionX;
@@ -80,11 +131,15 @@ var Game = cc.Layer.extend({
                         this.game.goResponse(position);
                         break;
                     case "reset":
-                        playerCount = obj.playerCount;
+                        playerCount = match.playingUsers.length;
                         this.game.resetResponse();
                         break;
                     case "assignOrder":
                         myOrder = obj.playerOrder;
+                        break;
+                    case "playerExit":
+                        controlLabel.setString("游戏中玩家推出, 游戏结束");
+                        this.game.clear();
                         break;
                 }
             };
@@ -116,9 +171,16 @@ var Game = cc.Layer.extend({
     },
     resetResponse: function() {
         if (playerCount < 2)
-            controlLabel.setString("当前玩家: " + playerCount + "/2");
-        else
+            controlLabel.setString("准备开始: " + playerCount + "/2");
+        else {
             this.resetGame();
+            if (myOrder != -1) {
+                controlLabel.setString("开始了...");
+            }
+            else {
+                controlLabel.setString("人满了, 观战中");
+            }
+        }
     },
     resetGame: function() {
         //清空棋子
@@ -131,7 +193,9 @@ var Game = cc.Layer.extend({
             for (var j = 0; j < 3; j++)
                 boardArr[i][j] = 0;
         }
-        controlLabel.setString("开始了...");
+
+        if (myOrder == -1)
+            this.removeChild(menu);
     },
     //发送下棋请求
     goRequest: function(position) {
@@ -154,13 +218,11 @@ var Game = cc.Layer.extend({
             else
                 text = "白方获胜！";
             controlLabel.setString(text);
-            myOrder = -1;
-            this.addChild(menu);
+            this.clear();
         }
         else if (chessArr.length == 9) {
             controlLabel.setString("平局");
-            myOrder = -1;
-            this.addChild(menu);
+            this.clear();
         }
     },
     //向指定位置下子
@@ -186,6 +248,12 @@ var Game = cc.Layer.extend({
         //return chess color num, 1-black, 2-white
         return boardArr[position.x][position.y];
     },
+    clear: function() {
+        myOrder = -1;
+        this.addChild(menu);
+        blackPlayerText.setString("黑方: ");
+        whitePlayerText.setString("白方: ");
+    },
     getMaxSum: function(positionX, positionY, chessColor, max) {
         var sum = -1;
         for (var index = 0; index < directionArr.length; index++) {
@@ -209,7 +277,7 @@ var Game = cc.Layer.extend({
         return Utils.containsTouchLocation(touch, chessboard);
     },
     onTouchEnded: function(touch, event) {
-        if (Utils.containsTouchLocation(touch, chessboard) && playerCount == 2) {
+        if (Utils.containsTouchLocation(touch, chessboard) && playerCount == 2 && myOrder != -1) {
             if ((chessArr.length % 2 + 1) != myOrder) {
                 controlLabel.setString("没轮到你");
                 return;
@@ -237,4 +305,3 @@ var Game = cc.Layer.extend({
         this._super();
     }
 });
-

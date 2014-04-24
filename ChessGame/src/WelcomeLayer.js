@@ -1,5 +1,6 @@
 var WelcomeLayer = cc.Layer.extend({
     userNameInput: null,
+    menu: null,
     ctor: function() {
         this._super();
         this.init();
@@ -9,7 +10,7 @@ var WelcomeLayer = cc.Layer.extend({
         if (this._super()) {
             var size = cc.Director.getInstance().getWinSize();
 
-            var layer = cc.LayerColor.create(new cc.Color4B(128, 128, 128, 255), size.width, size.height);
+            var layer = cc.LayerColor.create(new cc.Color4B(255, 250, 205, 255), size.width, size.height);
             this.addChild(layer);
 
             var itemStartGame = cc.MenuItemImage.create(
@@ -19,21 +20,19 @@ var WelcomeLayer = cc.Layer.extend({
                     this
                     );
             itemStartGame.setPosition(size.width / 2, size.height / 2);
-//            itemStartGame.setAnchorPoint(cc.p(0.5, 0.5));
 
-            var menu = cc.Menu.create(itemStartGame);
+            menu = cc.Menu.create(itemStartGame);
             menu.setPosition(0, 0);
-            this.addChild(menu);
 
-            userNameInput = cc.TextFieldTTF.create("请输入昵称",
-                    TEXT_INPUT_FONT_NAME,
-                    TEXT_INPUT_FONT_SIZE);
+
+            userNameInput = cc.TextFieldTTF.create("请输入昵称", TEXT_INPUT_FONT_NAME, TEXT_INPUT_FONT_SIZE);
             userNameInput.setPosition(size.width / 2, size.height / 2 + itemStartGame.getContentSize().height + 20);
+            userNameInput.setColor(cc.c3b(128, 128, 128));
             this.addChild(userNameInput);
 
             //注册touch事件
             cc.registerTargetedDelegate(1, true, this);
-            
+
             bRet = true;
         }
         return bRet;
@@ -42,16 +41,26 @@ var WelcomeLayer = cc.Layer.extend({
         return true;
     },
     onTouchEnded: function(touch, event) {
-        if(Utils.containsTouchLocation(touch, userNameInput))
+        if (Utils.containsTouchLocation(touch, userNameInput))
             userNameInput.attachWithIME();
-        else
+        else {
             userNameInput.detachWithIME();
+            if (userNameInput.getString() == "")
+                this.removeChild(menu);
+            else
+                this.addChild(menu);
+        }
     },
     menuCallBack: function(sender) {
+        if (userNameInput.getString() == "") {
+            this.removeChild(menu);
+            return;
+        }
+
         var nextScene = cc.Scene.create();
         var nextLayer = new Game(userNameInput.getString());
         nextScene.addChild(nextLayer);
-        cc.Director.getInstance().replaceScene(cc.TransitionSlideInT.create(0.4, nextScene));
+        cc.Director.getInstance().replaceScene(cc.TransitionFade.create(1, nextScene));
     },
     onExit: function() {
         cc.unregisterTouchDelegate(this);
